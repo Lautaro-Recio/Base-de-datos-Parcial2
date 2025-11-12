@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+        // Verificar autenticación al cargar la página
+        if (sessionStorage.getItem('isAuthenticated') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crud Conductores</title>
+    <link rel="stylesheet" href="front/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Conductores</h1>
+            <div class="header-actions">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Buscar conductor..." class="search-input">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button id="addBtn" class="add-btn">Agregar</button>
+            </div>
+        </div>
+        
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Licencia</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>DNI</th>
+                    <th>Teléfono</th>
+                    <th>Vehículo</th>
+                    <th>Infracciones</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Los registros se agregarán aquí dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Menú contextual -->
+    <div id="contextMenu" class="context-menu">
+        <button id="updateBtn">Actualizar</button>
+        <button id="deleteBtn">Eliminar</button>
+    </div>
+
+    <!-- Modal para agregar/editar registros -->
+    <div id="recordModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Agregar Nuevo Registro</h2>
+            <form id="recordForm">
+                <input type="hidden" id="recordId">
+                <div class="form-group">
+                    <label for="license">N° Licencia:</label>
+                    <input type="text" id="license" required>
+                </div>
+                <div class="form-group">
+                    <label for="name">Nombre:</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastname">Apellido:</label>
+                    <input type="text" id="lastname" required>
+                </div>
+                <div class="form-group">
+                    <label for="dni">DNI:</label>
+                    <input type="text" id="dni" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Teléfono:</label>
+                    <input type="tel" id="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="vehicle">Vehículo (Patente):</label>
+                    <input type="text" id="vehicle" required>
+                </div>
+                <div class="form-group">
+                    <label for="violations">Infracciones:</label>
+                    <select id="violations" multiple>
+                        <option value="exceso_velocidad">Exceso de velocidad</option>
+                        <option value="semaforo">Paso en rojo</option>
+                        <option value="estacionamiento">Estacionamiento indebido</option>
+                        <option value="alcohol">Conducción bajo efectos del alcohol</option>
+                        <option value="documentacion">Falta de documentación</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="status">Estado de la licencia:</label>
+                    <select id="status" required>
+                        <option value="habilitado">Habilitado</option>
+                        <option value="suspendido">Suspendido</option>
+                        <option value="vencido">Vencido</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" id="cancelBtn" class="cancel-btn">Cancelar</button>
+                    <button type="submit" class="save-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Eliminación -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content modal-delete">
+            <div class="modal-header">
+                <h3>Confirmar Eliminación</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDeleteBtn" class="delete-cancel-btn">Cancelar</button>
+                <button id="confirmDeleteBtn" class="delete-confirm-btn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/front/script.js"></script>
+    <!-- Botón de Cerrar Sesión -->
+    <button id="logoutBtn" class="logout-btn">Cerrar Sesión</button>
+
+    <script>
+        // Manejar cierre de sesión
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('isAuthenticated');
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>
