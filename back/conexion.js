@@ -1,5 +1,5 @@
-import { MongoClient } from 'mongodb';
-const uri = 'mongodb+srv://audagnafacundo_db_user:9qvVONNrR6cB2QX7@cluster0.c59akek.mongodb.net/';
+const { MongoClient } = require('mongodb');
+const uri = 'mongodb+srv://audagnafacundo_db_user:9qvVONNrR6cB2QX7@cluster0.c59akek.mongodb.net/?retryWrites=true&w=majority&ssl=true&tlsAllowInvalidCertificates=true';
 const dbName = 'parcial2_db';
 
 async function conectar() {
@@ -14,4 +14,4 @@ async function conectar() {
     }
 
 }
-export default conectar;
+module.exports = conectar;
