@@ -109,26 +109,56 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function (e) {
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
+            const loginBtn = document.querySelector('.login-btn');
+            
+            // Deshabilitar botón durante la autenticación
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verificando...';
 
-            // Credenciales válidas
-            if (username === 'alumno' && password === 'alu123') {
-                // Guardar sesión en localStorage
-                sessionStorage.setItem('isAuthenticated', 'true');
-                // Redirigir a la página principal
-                window.location.href = 'index.html';
-            } else {
-                // Mostrar mensaje de error
+            try {
+                // Enviar credenciales al backend
+                const response = await fetch('http://localhost:4000/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Guardar sesión en sessionStorage
+                    sessionStorage.setItem('isAuthenticated', 'true');
+                    sessionStorage.setItem('token', data.token);
+                    // Redirigir a la página principal
+                    window.location.href = 'index.html';
+                } else {
+                    // Mostrar mensaje de error
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = data.message || 'Usuario o contraseña incorrectos';
+                    // Ocultar mensaje después de 3 segundos
+                    setTimeout(() => {
+                        errorMessage.style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error en la autenticación:', error);
                 errorMessage.style.display = 'block';
-                // Ocultar mensaje después de 3 segundos
+                errorMessage.textContent = 'Error de conexión. Intenta nuevamente.';
                 setTimeout(() => {
                     errorMessage.style.display = 'none';
                 }, 3000);
+            } finally {
+                // Restaurar botón
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Iniciar Sesión';
             }
         });
 
