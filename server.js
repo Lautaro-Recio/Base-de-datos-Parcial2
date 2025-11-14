@@ -19,7 +19,7 @@ app.use((err,re,res,next)=>{
     res.status(500).json({error: err.message});
 })
 
-mongoose.connect(process.env.MONGODB_URI, { useUnifiedTopology: true})
+mongoose.connect(process.env.URI, { useUnifiedTopology: true})
     .then(() => console.log("Conectado a la base de datos"))
     .catch((error) => console.log(error));
 

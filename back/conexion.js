@@ -1,17 +1,21 @@
+require('dotenv').config();
 const { MongoClient } = require('mongodb');
-const uri = 'mongodb+srv://audagnafacundo_db_user:9qvVONNrR6cB2QX7@cluster0.c59akek.mongodb.net/?retryWrites=true&w=majority&ssl=true&tlsAllowInvalidCertificates=true';
-const dbName = 'parcial2_db';
+
+const uri = process.env.URI;
+const dbName = process.env.DB_NAME;
 
 async function conectar() {
-    try {
-        console.log('Conexión exitosa a la base de datos');
-        const client = new MongoClient(uri);
-        await client.connect();
-        const db = client.db(dbName);
-        return db;
-    } catch (error) {
-        console.log(error);
-    }
+    const client = new MongoClient(uri);
 
+    try {
+        await client.connect();
+        console.log("✅ Conectado a MongoDB Atlas");
+        const db = client.db(dbName);
+        return { client, db }; // <-- retornamos ambos
+    } catch (error) {
+        console.error("❌ Error al conectar con MongoDB:", error);
+        throw error;
+    }
 }
+
 module.exports = conectar;

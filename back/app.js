@@ -1,14 +1,19 @@
-const conectar = require("./conexion");
+// app.js (script de prueba)
+require('dotenv').config();
+const conectar = require("./conexion.js");
 
-async function mostrar (){
-    const db = await conectar();
-    try{
-        const coleccion = db.collection("usuarios");
-        const usuarios = await coleccion.find().toArray();
-        console.log(usuarios);
-    }catch(error){
-        console.log(error);
+const mostrar = async () => {
+    try {
+        const { client, db } = await conectar();
+        console.log("db obtenida:", db ? "ok" : "undefined");
+        const col = db.collection("test");
+        const docs = await col.find().toArray();
+        console.log("Documentos en test:", docs);
+        // cerramos la conexión del cliente al terminar el script
+        await client.close();
+    } catch (err) {
+        console.error("Error en mostrar():", err.message || err);
     }
-}
+};
 
-mostrar()
+mostrar();
