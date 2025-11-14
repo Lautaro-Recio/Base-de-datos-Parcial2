@@ -2,7 +2,7 @@ require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
 const mongoose = require("mongoose");
-const ruta = require("./routes/routes");
+const ruta = require("./back/routes/routes");
 const port = process.env.PORT || 3000;
 const app = express();
 
@@ -30,5 +30,3 @@ app.listen(port, () => {
 });
 
 app.use("/api", ruta);
-
-

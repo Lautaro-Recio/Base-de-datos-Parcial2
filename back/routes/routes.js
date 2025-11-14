@@ -24,4 +24,4 @@ routes.post("/post", async (req, res) => {
         res.status(400).json({messasge: error.message});
     }
 });
-module.exports = router;
+module.exports = routes;
