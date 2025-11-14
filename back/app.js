@@ -1,19 +1,27 @@
-// app.js (script de prueba)
-require('dotenv').config();
-const conectar = require("./conexion.js");
+import express from "express";
+import cors from "cors";
+import { conectar } from "./conexion.js";
 
-const mostrar = async () => {
-    try {
-        const { client, db } = await conectar();
-        console.log("db obtenida:", db ? "ok" : "undefined");
-        const col = db.collection("test");
-        const docs = await col.find().toArray();
-        console.log("Documentos en test:", docs);
-        // cerramos la conexión del cliente al terminar el script
-        await client.close();
-    } catch (err) {
-        console.error("Error en mostrar():", err.message || err);
-    }
-};
+import rutasConductores from "./routes/conductores.js";
+import rutasAutomoviles from "./routes/automoviles.js";
+import rutasMultas from "./routes/multas.js";
 
-mostrar();
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Conexión a MongoDB
+conectar();
+
+// Rutas
+app.use("/conductores", rutasConductores);
+app.use("/automoviles", rutasAutomoviles);
+app.use("/multas", rutasMultas);
+
+const PORT = process.env.PORT || 4000;
+
+
+app.listen(PORT, "127.0.0.1", () => {
+    console.log(`🔥 Servidor en http://127.0.0.1:${PORT}`);
+});

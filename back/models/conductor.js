@@ -8,4 +8,4 @@ const conductorSchema = new mongoose.Schema({
     telefono: String,
 });
 
-export default mongoose.model("conductor", conductorSchema);
+export default mongoose.model("Conductor", conductorSchema);
