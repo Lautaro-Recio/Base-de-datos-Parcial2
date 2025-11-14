@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { conectar } from "./conexion.js";
 
+import rutasAuth from "./routes/auth.js";
 import rutasConductores from "./routes/conductores.js";
 import rutasAutomoviles from "./routes/automoviles.js";
 import rutasMultas from "./routes/multas.js";
@@ -15,6 +16,7 @@ app.use(express.json());
 conectar();
 
 // Rutas
+app.use("/auth", rutasAuth);
 app.use("/conductores", rutasConductores);
 app.use("/automoviles", rutasAutomoviles);
 app.use("/multas", rutasMultas);
