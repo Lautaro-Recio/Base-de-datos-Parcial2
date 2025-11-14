@@ -11,7 +11,7 @@ async function conectar() {
         await client.connect();
         console.log("✅ Conectado a MongoDB Atlas");
         const db = client.db(dbName);
-        return { client, db }; // <-- retornamos ambos
+        return { client, db };
     } catch (error) {
         console.error("❌ Error al conectar con MongoDB:", error);
         throw error;
