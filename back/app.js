@@ -1,11 +1,14 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 import { conectar } from "./conexion.js";
 
 import rutasAuth from "./routes/auth.js";
 import rutasConductores from "./routes/conductores.js";
 import rutasAutomoviles from "./routes/automoviles.js";
 import rutasMultas from "./routes/multas.js";
+
+dotenv.config();
 
 const app = express();
 
@@ -21,7 +24,7 @@ app.use("/conductores", rutasConductores);
 app.use("/automoviles", rutasAutomoviles);
 app.use("/multas", rutasMultas);
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
 app.listen(PORT, "127.0.0.1", () => {
     console.log(`🔥 Servidor backend corriendo en http://127.0.0.1:${PORT}`);
