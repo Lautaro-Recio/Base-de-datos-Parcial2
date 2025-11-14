@@ -26,6 +26,12 @@ body {
     margin: 0;
 }
 
+.logo-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .header-actions {
     display: flex;
     justify-content: space-between;
