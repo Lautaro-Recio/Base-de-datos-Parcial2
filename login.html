@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Iniciar Sesión - Sistema de Conductores</title>
     <style>
         body {
@@ -15,6 +17,7 @@
             align-items: center;
             min-height: 100vh;
         }
+
         .login-container {
             background: white;
             padding: 40px;
@@ -24,22 +27,26 @@
             max-width: 400px;
             text-align: center;
         }
+
         .login-logo {
             font-size: 28px;
             font-weight: bold;
             color: #2c3e50;
             margin-bottom: 30px;
         }
+
         .form-group {
             margin-bottom: 20px;
             text-align: left;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
             color: #2c3e50;
         }
+
         .form-group input {
             width: 100%;
             padding: 12px;
@@ -48,6 +55,7 @@
             font-size: 14px;
             box-sizing: border-box;
         }
+
         .login-btn {
             width: 100%;
             padding: 12px;
@@ -59,15 +67,18 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
+
         .login-btn:hover {
             background-color: #1a252f;
         }
+
         .error-message {
             color: #e74c3c;
             margin-top: 15px;
             display: none;
             font-size: 14px;
         }
+
         .login-footer {
             margin-top: 20px;
             font-size: 13px;
@@ -75,8 +86,10 @@
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
+        <img src="/front/img/logo.png" alt="logo" width="200">
         <div class="login-logo">Sistema de Conductores</div>
         <form id="loginForm">
             <div class="form-group">
@@ -96,13 +109,13 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
-            
+
             // Credenciales válidas
             if (username === 'alumno' && password === 'alu123') {
                 // Guardar sesión en localStorage
@@ -125,4 +138,5 @@
         }
     </script>
 </body>
+
 </html>
