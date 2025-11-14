@@ -10,6 +10,7 @@ export async function conectar() {
         });
 
         console.log("✅ Conectado a MongoDB con Mongoose");
+        
     } catch (error) {
         console.error("❌ Error al conectar a MongoDB:", error);
         process.exit(1);
