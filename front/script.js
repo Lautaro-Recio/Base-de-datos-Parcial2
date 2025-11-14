@@ -395,3 +395,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+
+
+
+/* DATOS */
+
+
+const API_URL = "http://localhost:3000";
+
+const conductores = async () => {
+    try {
+        const resp = await fetch(`${API_URL}/conductores`);
+        if (!resp.ok) {
+          const msg = await safeText(resp); // opcional, intenta leer texto del error
+          throw new Error(`Error ${resp.status}: ${msg || 'No se pudieron obtener los automóviles'}`);
+        }
+        return await resp.json();
+    } catch (e) {
+        console.error('fetchAutomoviles fallo:', e);
+        // aquí podrías mostrar un toast/mensaje global
+        throw e; // re-lanzar para que el caller decida qué hacer
+    }
+}
+
+async function postConductores() {
+    const resp = await fetch(`${API_URL}/conductores`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            nombre: 'John Doe',
+            apellido: 'Doe',
+            dni: '12345678',
+            telefono: '12345678',
+        })
+    });
+    if (!resp.ok) throw new Error('No se pudo agregar el conductor');
+    return resp.json();
+}
+
+async function eliminarConductor(id) {
+  const resp = await fetch(`${API_URL}/conductores/${id}`, { method: 'DELETE' });
+  if (!resp.ok) {
+    const err = await resp.text().catch(() => '');
+    throw new Error(`No se pudo borrar el conductor: ${resp.status} ${err}`);
+  }
+  return resp.json(); // opcional, según lo que devuelva tu API
+}
+
+async function updateConductores(id, params) {
+    const resp = await fetch(`${API_URL}/conductores/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params)
+    });
+    if (!resp.ok) throw new Error('No se pudo actualizar el conductor');
+    return resp.json();
+}
+
+const datos = conductores() 
+.then(data => console.log('Automóviles:', data))
+.catch(err => console.error(err));
+console.log(datos)

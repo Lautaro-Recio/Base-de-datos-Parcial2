@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <script>
         // Verificar autenticación al cargar la página
@@ -12,8 +13,99 @@
     <title>Crud Conductores</title>
     <link rel="stylesheet" href="front/styles.css">
 </head>
+
 <body>
-    <div class="container">
+    <div class="container ">
+        <div class="header">
+            <h1>Automoviles</h1>
+            <div class="header-actions">
+                <div class="search-container">
+                    <input type="text" id="autoSearchInput" placeholder="Buscar automóvil..." class="search-input">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button id="autoAddBtn" class="add-btn">Agregar</button>
+            </div>
+        </div>
+
+        <table id="automovilesTable">
+            <thead>
+                <tr>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Patente</th>
+                    <th>Conductor</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-automoviles">
+                <!-- Los registros se agregarán aquí dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Menú Automóviles -->
+    <div id="autoContextMenu" class="context-menu">
+        <button id="autoUpdateBtn">Actualizar</button>
+        <button id="autoDeleteBtn">Eliminar</button>
+    </div>
+
+    <!-- Modal Automóviles (IDs únicos para evitar colisiones) -->
+    <div id="autoRecordModal" class="modal">
+        <div class="modal-content">
+            <h2 id="autoModalTitle">Agregar Nuevo Registro</h2>
+            <form id="autoRecordForm">
+                <input type="hidden" id="autoRecordId">
+                <div class="form-group">
+                    <label for="autoLicense">N° Licencia:</label>
+                    <input type="text" id="autoLicense" required>
+                </div>
+                <div class="form-group">
+                    <label for="autoName">Nombre:</label>
+                    <input type="text" id="autoName" required>
+                </div>
+                <div class="form-group">
+                    <label for="autoLastname">Apellido:</label>
+                    <input type="text" id="autoLastname" required>
+                </div>
+                <div class="form-group">
+                    <label for="autoDni">DNI:</label>
+                    <input type="text" id="autoDni" required>
+                </div>
+                <div class="form-group">
+                    <label for="autoPhone">Teléfono:</label>
+                    <input type="tel" id="autoPhone" required>
+                </div>
+                <div class="form-group">
+                    <label for="autoVehicle">Vehículo (Patente):</label>
+                    <input type="text" id="autoVehicle" required>
+                </div>
+                <div class="form-group">
+                    <label for="autoViolations">Infracciones:</label>
+                    <select id="autoViolations" multiple>
+                        <option value="exceso_velocidad">Exceso de velocidad</option>
+                        <option value="semaforo">Paso en rojo</option>
+                        <option value="estacionamiento">Estacionamiento indebido</option>
+                        <option value="alcohol">Conducción bajo efectos del alcohol</option>
+                        <option value="documentacion">Falta de documentación</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="autoStatus">Estado de la licencia:</label>
+                    <select id="autoStatus" required>
+                        <option value="habilitado">Habilitado</option>
+                        <option value="suspendido">Suspendido</option>
+                        <option value="vencido">Vencido</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" id="autoCancelBtn" class="cancel-btn">Cancelar</button>
+                    <button type="submit" class="save-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="container mt-5">
         <div class="header">
             <h1>Conductores</h1>
             <div class="header-actions">
@@ -24,7 +116,7 @@
                 <button id="addBtn" class="add-btn">Agregar</button>
             </div>
         </div>
-        
+
         <table id="dataTable">
             <thead>
                 <tr>
@@ -106,6 +198,7 @@
         </div>
     </div>
 
+
     <!-- Modal de Confirmación de Eliminación -->
     <div id="deleteModal" class="modal" style="display: none;">
         <div class="modal-content modal-delete">
@@ -129,10 +222,11 @@
 
     <script>
         // Manejar cierre de sesión
-        document.getElementById('logoutBtn').addEventListener('click', function() {
+        document.getElementById('logoutBtn').addEventListener('click', function () {
             sessionStorage.removeItem('isAuthenticated');
             window.location.href = 'login.html';
         });
     </script>
 </body>
+
 </html>
