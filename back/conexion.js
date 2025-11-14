@@ -1,17 +1,19 @@
+import dotenv from 'dotenv';
 import { MongoClient } from 'mongodb';
-const uri = 'mongodb+srv://audagnafacundo_db_user:9qvVONNrR6cB2QX7@cluster0.c59akek.mongodb.net/';
-const dbName = 'parcial2_db';
+
+dotenv.config();
+
+const uri = process.env.URI;
 
 async function conectar() {
     try {
-        console.log('Conexión exitosa a la base de datos');
-        const client = new MongoClient(uri);
-        await client.connect();
-        const db = client.db(dbName);
+        console.log("✅ Conectado a MongoDB Atlas");
+        const cliente = new MongoClient(uri)
+        await cliente.connect()
+        const db = cliente.db(process.env.DB_NAME);
         return db;
     } catch (error) {
-        console.log(error);
+        console.log("❌ Error al conectar con MongoDB:", error);
     }
-
-}
+};
 export default conectar;
