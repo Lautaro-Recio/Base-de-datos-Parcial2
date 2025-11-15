@@ -1,7 +1,6 @@
 let lista;
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Elementos del DOM
     const tableBody = document.getElementById('tableBody');
     const contextMenu = document.getElementById('contextMenu');
     const addBtn = document.getElementById('addBtn');
@@ -10,15 +9,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const cancelBtn = document.getElementById('cancelBtn');
     const modalTitle = document.getElementById('modalTitle');
 
-    // Variables de estado
     let selectedRow = null;
-    // al inicio, dentro del primer DOMContentLoaded:
     let datos = [];
-    let multasDict = {}; // id -> etiqueta
-    let multasById = {}; // id -> objeto multa completo
+    let multasDict = {}; 
+    let multasById = {};
     populateViolationsSelect();
 
-    // Cargar conductores desde backend y renderizar
     async function loadConductores() {
         try {
             const data = await conductores();
@@ -29,14 +25,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 apellido: c.apellido ?? '',
                 dni: c.dni ?? '',
                 telefono: c.telefono ?? '',
-                patente: c.patente ?? '',            // usa c.patente (cambiaste el modelo)
-                multas: (c.infracciones || [])// array de IDs
+                patente: c.patente ?? '',           
+                multas: (c.infracciones || [])
             }));
             displayRecords();
         } catch (e) { console.error('Error cargando conductores:', e); }
     }
-
-    // llamada inicial
     loadConductores();
 
 
@@ -47,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const row = document.createElement('tr');
             row.setAttribute('data-id', record.id);
 
-            // Formatear lista de infracciones
             const labels = Array.isArray(record.multas)
                 ? record.multas.map(id => multasDict[String(id)] || String(id))
                 : [];
@@ -66,7 +59,6 @@ document.addEventListener('DOMContentLoaded', function () {
             tableBody.appendChild(row);
         });
 
-        // Manejar clic en "Ver infracciones"
         const viewFinesBtn = document.getElementById('viewFinesBtn');
         if (viewFinesBtn) {
             viewFinesBtn.addEventListener('click', function () {
@@ -77,7 +69,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tbody = document.getElementById('fines-tbody');
                 if (!conductor || !container || !tbody) return;
 
-                // Compatibilidad: puede venir como subdocs (infracciones) o como IDs en multas
                 const multas = lista;
                 const rows = conductor.multas.map(mid => {
                     console.log(conductor.multas)
@@ -104,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     window.displayRecords = displayRecords;
 
-    // Mostrar el menú contextual al hacer clic derecho
     tableBody.addEventListener('contextmenu', function (e) {
         e.preventDefault();
         const row = e.target.closest('tr');
@@ -112,13 +102,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         selectedRow = row;
 
-        // Posicionar el menú contextual
         const x = e.clientX;
         const y = e.clientY;
 
         contextMenu.style.display = 'block';
 
-        // Asegurar que el menú no se salga de la pantalla
         const menuWidth = contextMenu.offsetWidth;
         const menuHeight = contextMenu.offsetHeight;
         const windowWidth = window.innerWidth;
@@ -128,21 +116,17 @@ document.addEventListener('DOMContentLoaded', function () {
         contextMenu.style.top = (y + menuHeight > windowHeight) ? `${windowHeight - menuHeight - 5}px` : `${y}px`;
     });
 
-    // Ocultar menú contextual al hacer clic en otra parte
     document.addEventListener('click', function () {
         contextMenu.style.display = 'none';
     });
 
-    // Prevenir que el menú contextual se cierre al hacer clic en él
     contextMenu.addEventListener('click', function (e) {
         e.stopPropagation();
     });
 
-    // Manejar clic en el botón Actualizar
     document.getElementById('updateBtn').addEventListener('click', async function () {
         if (!selectedRow) return;
-        const id = selectedRow.dataset.id; // ObjectId string
-        // Fuente de datos actual
+        const id = selectedRow.dataset.id;
         const record = datos.find(r => String(r.id) === String(id));
 
         if (record) {
@@ -158,16 +142,13 @@ document.addEventListener('DOMContentLoaded', function () {
             setVal('telefono', record.telefono);
             setVal('patente', record.patente);
 
-            // Asegurarse de que las multas estén cargadas
             await populateViolationsSelect();
 
             const violationsSelect = document.getElementById('multas');
             if (violationsSelect) {
-                // Obtener los IDs de las multas seleccionadas
                 const selectedMultas = Array.isArray(record.multas) ?
                     record.multas.map(m => String(m.multa || m)) : [];
 
-                // Marcar las opciones seleccionadas
                 Array.from(violationsSelect.options).forEach(option => {
                     option.selected = selectedMultas.includes(String(option.value));
                 });
@@ -183,19 +164,16 @@ document.addEventListener('DOMContentLoaded', function () {
         contextMenu.style.display = 'none';
     });
 
-    // Elementos del modal de confirmación
     const deleteModal = document.getElementById('deleteModal');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
     const closeModalBtn = document.querySelector('.close-modal');
 
-    // Función para mostrar el modal de confirmación
     function showDeleteModal() {
         deleteModal.style.display = 'flex';
         setTimeout(() => deleteModal.classList.add('show'), 10);
     }
 
-    // Función para ocultar el modal de confirmación
     function hideDeleteModal() {
         deleteModal.classList.remove('show');
         setTimeout(() => {
@@ -203,13 +181,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 300);
     }
 
-    // Manejar clic en el botón Eliminar
     document.getElementById('deleteBtn').addEventListener('click', function () {
         if (!selectedRow) return;
         showDeleteModal();
     });
 
-    // Confirmar eliminación
     confirmDeleteBtn.addEventListener('click', function () {
         if (!selectedRow) return
 
@@ -222,39 +198,31 @@ document.addEventListener('DOMContentLoaded', function () {
         contextMenu.style.display = 'none'
     });
 
-    // Cancelar eliminación
     cancelDeleteBtn.addEventListener('click', hideDeleteModal);
     closeModalBtn.addEventListener('click', hideDeleteModal);
 
-    // Cerrar modal al hacer clic fuera del contenido
     deleteModal.addEventListener('click', function (e) {
         if (e.target === deleteModal) {
             hideDeleteModal();
         }
     });
 
-    // Mostrar notificación mejorada
     function showNotification(message, type = 'info') {
-        // Eliminar notificaciones existentes para evitar superposición
         const existingNotifications = document.querySelectorAll('.notification');
         existingNotifications.forEach(notif => {
             notif.classList.remove('show');
             setTimeout(() => notif.remove(), 300);
         });
 
-        // Crear elemento de notificación
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
 
-        // Crear contenedor de mensaje
         const messageContainer = document.createElement('div');
         messageContainer.className = 'notification-message';
         messageContainer.textContent = message;
 
-        // Agregar mensaje a la notificación
         notification.appendChild(messageContainer);
 
-        // Agregar botón de cierre
         const closeButton = document.createElement('button');
         closeButton.className = 'notification-close';
         closeButton.innerHTML = '&times;';
@@ -266,24 +234,19 @@ document.addEventListener('DOMContentLoaded', function () {
         notification.appendChild(closeButton);
         document.body.appendChild(notification);
 
-        // Forzar reflow para permitir la transición
         void notification.offsetWidth;
 
-        // Mostrar notificación con animación
         notification.classList.add('show');
 
-        // Configurar tiempo de cierre automático
         let timeoutId = setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
         }, 4000);
 
-        // Pausar el cierre automático al hacer hover
         notification.addEventListener('mouseenter', () => {
             clearTimeout(timeoutId);
         });
 
-        // Reanudar cuenta regresiva al salir del hover
         notification.addEventListener('mouseleave', () => {
             timeoutId = setTimeout(() => {
                 notification.classList.remove('show');
@@ -292,41 +255,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Mostrar modal para agregar nuevo registro
     addBtn.addEventListener('click', async function () {
         document.getElementById('recordForm').reset();
         document.getElementById('recordId').value = '';
-        // Asegurarse de que las multas estén cargadas
         await populateViolationsSelect();
         modalTitle.textContent = 'Agregar Nuevo Registro';
         recordModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Prevenir scroll
+        document.body.style.overflow = 'hidden';
     });
 
-    // Cerrar modal
     function closeModal() {
         recordModal.style.display = 'none';
-        document.body.style.overflow = ''; // Restaurar scroll
+        document.body.style.overflow = ''; 
     }
 
-    // Cerrar modal al hacer clic en Cancelar
     cancelBtn.addEventListener('click', closeModal);
 
-    // Cerrar modal al hacer clic fuera del contenido
     window.addEventListener('click', function (e) {
         if (e.target === recordModal) {
             closeModal();
         }
     });
 
-    // Cerrar modal con la tecla Escape
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && recordModal.style.display === 'flex') {
             closeModal();
         }
     });
 
-    // Manejar envío del formulario
     recordForm.addEventListener('submit', function (e) {
         e.preventDefault();
 
@@ -334,14 +290,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const getSelectedMultaIds = getSelectedViolationIds();
         console.log(getSelectedMultaIds)
         const multasSeleccionadasConEstado = getSelectedMultaIds.map(multa => {
-            let estado = "Por pagar"; // Estado por defecto si solo se marcó "seleccionar"
-
+            let estado = "Por pagar"; 
             if (multa.opciones.includes("adelantado")) {
                 estado = "Pagada por adelantado";
             }
 
             return {
-                multa: multa.id, // Se renombra a 'multa' para coincidir con el Schema (type: ObjectId, ref: "Multa")
+                multa: multa.id,
                 estado: estado
             };
         });
@@ -362,22 +317,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
             showNotification('Registro actualizado correctamente', 'success');
         } else {
-            // Agregar nuevo registro
             postConductores(record)
             loadConductores();
 
             showNotification('Conductor agregado correctamente', 'success');
         }
 
-        // Actualizar la tabla y cerrar el modal
         displayRecords();
         closeModal();
     });
 
-    // Inicializar la tabla al cargar la página
     displayRecords();
 
-    // Manejar búsqueda
     const searchInput = document.getElementById('searchInput');
     let searchTimeout;
 
@@ -388,7 +339,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 300);
     });
 
-    // Permitir limpiar la búsqueda con la tecla Escape
     searchInput.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             this.value = '';
@@ -438,7 +388,7 @@ async function eliminarConductor(id) {
         const err = await resp.text().catch(() => '');
         throw new Error(`No se pudo borrar el conductor: ${resp.status} ${err}`);
     }
-    return resp.json(); // opcional, según lo que devuelva tu API
+    return resp.json()
 }
 
 async function updateConductores(id, params) {
@@ -483,12 +433,11 @@ async function populateViolationsSelect() {
 
         lista.forEach(m => {
             const label = m.motivo ? m.motivo : (m.tipo ?? "Multa");
-            const multaId = m._id; // Almacenamos el ID para usarlo en los names/ids
+            const multaId = m._id;
 
             const div = document.createElement("div");
             div.classList.add("multa-item");
 
-            // --- MODIFICACIÓN CLAVE: Cambiar 'type="radio"' por 'type="checkbox"' ---
             div.innerHTML = `
                 <span>${label}</span>
                 <div class="multa-opciones">
@@ -509,7 +458,6 @@ async function populateViolationsSelect() {
             cont.appendChild(div);
         });
 
-        // Eventos de los botones
         document.querySelectorAll(".btn-pagar").forEach(btn => {
             btn.addEventListener("click", async e => {
                 const id = e.target.dataset.id;
@@ -524,7 +472,6 @@ async function populateViolationsSelect() {
 
 
 function getSelectedViolationIds() {
-    // 1. Obtener todos los checkboxes marcados dentro del contenedor principal.
     const checkboxesMarcados = document.querySelectorAll('#multas-container input[type="checkbox"]:checked');
 
     console.log("Checkboxes marcados:", checkboxesMarcados);
@@ -535,22 +482,19 @@ function getSelectedViolationIds() {
         const id = checkbox.dataset.id;
         const name = checkbox.name;
 
-        // Determinar qué opción se seleccionó
         let opcion;
         if (name.startsWith('multa_pagada_')) {
-            opcion = 'adelantado'; // Usar 'adelantado' para coincidir con tu valor original si es necesario
+            opcion = 'adelantado'; 
         } else if (name.startsWith('multa_seleccionada_')) {
-            opcion = 'seleccionar'; // Usar 'seleccionar' para coincidir con tu valor original si es necesario
+            opcion = 'seleccionar'; 
         } else {
-            return; // Ignorar otros checkboxes que no sigan el patrón
+            return; 
         }
 
-        // 2. Agrupar las opciones por el ID de la multa.
-        // Busca si esta multa (por ID) ya fue añadida al array de resultados.
+    
         let multaExistente = multasSeleccionadas.find(m => m.id === id);
 
         if (!multaExistente) {
-            // Si no existe, crea un nuevo objeto para la multa.
             multaExistente = {
                 id: id,
                 opciones: []
@@ -558,10 +502,8 @@ function getSelectedViolationIds() {
             multasSeleccionadas.push(multaExistente);
         }
 
-        // Agrega la opción seleccionada (pueden ser ambas: 'seleccionar' y 'adelantado').
         multaExistente.opciones.push(opcion);
     });
 
-    // Devuelve un array con objetos que contienen el ID y un array de las opciones seleccionadas.
     return multasSeleccionadas;
 }
