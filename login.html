@@ -109,30 +109,49 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function (e) {
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
+            const loginBtn = document.querySelector('.login-btn');
 
-            // Credenciales válidas
-            if (username === 'alumno' && password === 'alu123') {
-                // Guardar sesión en localStorage
-                sessionStorage.setItem('isAuthenticated', 'true');
-                // Redirigir a la página principal
-                window.location.href = 'index.html';
-            } else {
-                // Mostrar mensaje de error
+            loginBtn.disabled = true;
+            const originalText = loginBtn.textContent;
+            loginBtn.textContent = 'Verificando...';
+
+            try {
+                // Usar el puerto que está configurado en el backend (.env -> PORT = 3000)
+                const API_BASE = 'http://127.0.0.1:3000';
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    sessionStorage.setItem('isAuthenticated', 'true');
+                    if (data.token) sessionStorage.setItem('token', data.token);
+                    window.location.href = 'index.html';
+                } else {
+                    errorMessage.textContent = data.message || 'Usuario o contraseña incorrectos';
+                    errorMessage.style.display = 'block';
+                    setTimeout(() => { errorMessage.style.display = 'none'; }, 3000);
+                }
+            } catch (err) {
+                console.error('Error conectando al backend:', err);
+                errorMessage.textContent = 'Error de conexión. Intenta nuevamente.';
                 errorMessage.style.display = 'block';
-                // Ocultar mensaje después de 3 segundos
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                }, 3000);
+                setTimeout(() => { errorMessage.style.display = 'none'; }, 3000);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = originalText;
             }
         });
 
-        // Si ya está autenticado, redirigir al index
         if (sessionStorage.getItem('isAuthenticated') === 'true') {
             window.location.href = 'index.html';
         }
