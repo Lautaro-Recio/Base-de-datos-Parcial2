@@ -23,7 +23,21 @@ router.get("/:id", async (req, res) => {
 // POST crear
 router.post("/", async (req, res) => {
     try {
-        const nuevo = new Conductor(req.body);
+        const body = { ...req.body };
+        if (Array.isArray(body.infracciones)) {
+            body.infracciones = body.infracciones.map((inf) => {
+                // Permitir subdoc completo o solo ID
+                if (inf && typeof inf === "object" && (inf.multa || inf._id)) {
+                    return {
+                        multa: inf.multa || inf._id,
+                        estado: inf.estado || "Por pagar",
+                    };
+                }
+                // Es un ID crudo
+                return { multa: inf, estado: "Por pagar" };
+            });
+        }
+        const nuevo = new Conductor(body);
         await nuevo.save();
         res.json({ mensaje: "Conductor agregado", conductor: nuevo });
     } catch (error) {
@@ -34,7 +48,19 @@ router.post("/", async (req, res) => {
 // PUT actualizar
 router.put("/:id", async (req, res) => {
     try {
-        const actualizado = await Conductor.findByIdAndUpdate(req.params.id, req.body, {
+        const body = { ...req.body };
+        if (Array.isArray(body.infracciones)) {
+            body.infracciones = body.infracciones.map((inf) => {
+                if (inf && typeof inf === "object" && (inf.multa || inf._id)) {
+                    return {
+                        multa: inf.multa || inf._id,
+                        estado: inf.estado,
+                    };
+                }
+                return { multa: inf, estado: "Por pagar" };
+            });
+        }
+        const actualizado = await Conductor.findByIdAndUpdate(req.params.id, body, {
             new: true
         });
         if (!actualizado) return res.status(404).json({ error: "Conductor no encontrado" });

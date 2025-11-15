@@ -1,4 +1,6 @@
-document.addEventListener('DOMContentLoaded', function() {
+let lista;
+
+document.addEventListener('DOMContentLoaded', function () {
     // Elementos del DOM
     const tableBody = document.getElementById('tableBody');
     const contextMenu = document.getElementById('contextMenu');
@@ -7,150 +9,177 @@ document.addEventListener('DOMContentLoaded', function() {
     const recordForm = document.getElementById('recordForm');
     const cancelBtn = document.getElementById('cancelBtn');
     const modalTitle = document.getElementById('modalTitle');
-    
+
     // Variables de estado
     let selectedRow = null;
-    let records = JSON.parse(localStorage.getItem('records')) || [];
-    let nextId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
+    // al inicio, dentro del primer DOMContentLoaded:
+    let datos = [];
+    let multasDict = {}; // id -> etiqueta
+    let multasById = {}; // id -> objeto multa completo
+    populateViolationsSelect();
 
-    // Función para verificar si un registro coincide con el término de búsqueda
-    function recordMatchesSearch(record, searchTerm) {
-        if (!searchTerm) return true;
-        
-        const searchableText = [
-            record.license || '',
-            record.name || '',
-            record.lastname || '',
-            record.dni || '',
-            record.phone || '',
-            record.vehicle || '',
-            record.status || '',
-            Array.isArray(record.violations) ? record.violations.join(' ') : ''
-        ].join(' ').toLowerCase();
-        
-        return searchableText.includes(searchTerm.toLowerCase());
+    // Cargar conductores desde backend y renderizar
+    async function loadConductores() {
+        try {
+            const data = await conductores();
+            lista = await multas();
+            datos = data.map(c => ({
+                id: c._id,
+                nombre: c.nombre ?? '',
+                apellido: c.apellido ?? '',
+                dni: c.dni ?? '',
+                telefono: c.telefono ?? '',
+                patente: c.patente ?? '',            // usa c.patente (cambiaste el modelo)
+                multas: (c.infracciones || [])// array de IDs
+            }));
+            displayRecords();
+        } catch (e) { console.error('Error cargando conductores:', e); }
     }
 
-    // Mostrar registros en la tabla
+    // llamada inicial
+    loadConductores();
+
+
     function displayRecords(searchTerm = '') {
         tableBody.innerHTML = '';
-        
-        const filteredRecords = searchTerm 
-            ? records.filter(record => recordMatchesSearch(record, searchTerm))
-            : records;
-            
-        if (filteredRecords.length === 0) {
-            const row = document.createElement('tr');
-            row.innerHTML = '<td colspan="8" style="text-align: center; padding: 20px;">No se encontraron conductores que coincidan con la búsqueda</td>';
-            tableBody.appendChild(row);
-            return;
-        }
-            
-        filteredRecords.forEach(record => {
+
+        datos.forEach(record => {
             const row = document.createElement('tr');
             row.setAttribute('data-id', record.id);
-            
+
             // Formatear lista de infracciones
-            const violationsList = Array.isArray(record.violations) 
-                ? record.violations.map(v => `<li>${v.replace(/_/g, ' ').replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())}</li>`).join('')
+            const labels = Array.isArray(record.multas)
+                ? record.multas.map(id => multasDict[String(id)] || String(id))
+                : [];
+            const violationsList = labels.length
+                ? labels.map(lbl => `<li>${lbl}</li>`).join('')
                 : '';
-            
-            // Determinar clase de estado
-            const statusClass = `status-${record.status || 'habilitado'}`;
-            const statusText = record.status ? record.status.charAt(0).toUpperCase() + record.status.slice(1) : 'Habilitado';
-            
+
             row.innerHTML = `
-                <td>${escapeHtml(record.license || '')}</td>
-                <td>${escapeHtml(record.name || '')}</td>
-                <td>${escapeHtml(record.lastname || '')}</td>
-                <td>${escapeHtml(record.dni || '')}</td>
-                <td>${escapeHtml(record.phone || '')}</td>
-                <td>${escapeHtml(record.vehicle || '')}</td>
-                <td>${violationsList ? `<ul class="violation-list">${violationsList}</ul>` : 'Ninguna'}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${record.nombre || ''}</td>
+                <td>${record.apellido || ''}</td>
+                <td>${record.dni || ''}</td>
+                <td>${record.telefono || ''}</td>
+                <td>${record.patente || ''}</td>
+                <td>${violationsList ? `Posee infracciones` : 'No posee infracciones'}</td>
             `;
             tableBody.appendChild(row);
         });
-    }
 
-    // Escapar HTML para prevenir XSS
-    function escapeHtml(unsafe) {
-        return unsafe
-            .toString()
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+        // Manejar clic en "Ver infracciones"
+        const viewFinesBtn = document.getElementById('viewFinesBtn');
+        if (viewFinesBtn) {
+            viewFinesBtn.addEventListener('click', function () {
+                if (!selectedRow) return;
+                const id = selectedRow.dataset.id;
+                const conductor = datos.find(r => String(r.id) === String(id));
+                const container = document.getElementById('fines-container');
+                const tbody = document.getElementById('fines-tbody');
+                if (!conductor || !container || !tbody) return;
+
+                // Compatibilidad: puede venir como subdocs (infracciones) o como IDs en multas
+                const multas = lista;
+                const rows = conductor.multas.map(mid => {
+                    console.log(conductor.multas)
+                    const multa = multas.find(m => String(m._id) === String(mid.multa));
+                    return {
+                        motivo: multa.motivo,
+                        estado: mid.estado,
+                        monto: multa.monto
+                    };
+                });
+                console.log(rows)
+                tbody.innerHTML = rows.length ? rows.map(r => `
+                <tr>
+                    <td>${r.motivo}</td>
+                    <td><span class="status-badge ${r.estado === 'Por pagar' ? 'status-vencido' : 'status-habilitado'}">${r.estado}</span></td>
+                    <td>$${r.monto}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="3" style="text-align:center;padding:12px">Sin infracciones</td></tr>';
+
+                container.style.display = 'block';
+                contextMenu.style.display = 'none';
+            });
+        }
     }
+    window.displayRecords = displayRecords;
 
     // Mostrar el menú contextual al hacer clic derecho
-    tableBody.addEventListener('contextmenu', function(e) {
+    tableBody.addEventListener('contextmenu', function (e) {
         e.preventDefault();
         const row = e.target.closest('tr');
         if (!row) return;
 
         selectedRow = row;
-        
+
         // Posicionar el menú contextual
         const x = e.clientX;
         const y = e.clientY;
-        
+
         contextMenu.style.display = 'block';
-        
+
         // Asegurar que el menú no se salga de la pantalla
         const menuWidth = contextMenu.offsetWidth;
         const menuHeight = contextMenu.offsetHeight;
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-        
+
         contextMenu.style.left = (x + menuWidth > windowWidth) ? `${windowWidth - menuWidth - 5}px` : `${x}px`;
         contextMenu.style.top = (y + menuHeight > windowHeight) ? `${windowHeight - menuHeight - 5}px` : `${y}px`;
     });
 
     // Ocultar menú contextual al hacer clic en otra parte
-    document.addEventListener('click', function() {
+    document.addEventListener('click', function () {
         contextMenu.style.display = 'none';
     });
 
     // Prevenir que el menú contextual se cierre al hacer clic en él
-    contextMenu.addEventListener('click', function(e) {
+    contextMenu.addEventListener('click', function (e) {
         e.stopPropagation();
     });
 
     // Manejar clic en el botón Actualizar
-    document.getElementById('updateBtn').addEventListener('click', function() {
+    document.getElementById('updateBtn').addEventListener('click', async function () {
         if (!selectedRow) return;
-        const id = parseInt(selectedRow.getAttribute('data-id'));
-        const record = records.find(r => r.id === id);
-        
+        const id = selectedRow.dataset.id; // ObjectId string
+        // Fuente de datos actual
+        const record = datos.find(r => String(r.id) === String(id));
+
         if (record) {
-            // Llenar el formulario con los datos del registro
+            const setVal = (elId, val) => {
+                const el = document.getElementById(elId);
+                if (el) el.value = val ?? '';
+            };
+
             document.getElementById('recordId').value = record.id;
-            document.getElementById('license').value = record.license || '';
-            document.getElementById('name').value = record.name || '';
-            document.getElementById('lastname').value = record.lastname || '';
-            document.getElementById('dni').value = record.dni || '';
-            document.getElementById('phone').value = record.phone || '';
-            document.getElementById('vehicle').value = record.vehicle || '';
-            
-            // Establecer las infracciones seleccionadas
-            const violationsSelect = document.getElementById('violations');
-            Array.from(violationsSelect.options).forEach(option => {
-                option.selected = record.violations && record.violations.includes(option.value);
-            });
-            
-            // Establecer el estado
-            if (record.status) {
-                document.getElementById('status').value = record.status;
+            setVal('nombre', record.nombre);
+            setVal('apellido', record.apellido);
+            setVal('dni', record.dni);
+            setVal('telefono', record.telefono);
+            setVal('patente', record.patente);
+
+            // Asegurarse de que las multas estén cargadas
+            await populateViolationsSelect();
+
+            const violationsSelect = document.getElementById('multas');
+            if (violationsSelect) {
+                // Obtener los IDs de las multas seleccionadas
+                const selectedMultas = Array.isArray(record.multas) ?
+                    record.multas.map(m => String(m.multa || m)) : [];
+
+                // Marcar las opciones seleccionadas
+                Array.from(violationsSelect.options).forEach(option => {
+                    option.selected = selectedMultas.includes(String(option.value));
+                });
+
+                console.log('Multas seleccionadas:', selectedMultas);
             }
-            
-            // Mostrar el modal
+
             modalTitle.textContent = 'Actualizar Registro';
             recordModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // Prevenir scroll
+            document.body.style.overflow = 'hidden';
         }
-        
+
         contextMenu.style.display = 'none';
     });
 
@@ -175,22 +204,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Manejar clic en el botón Eliminar
-    document.getElementById('deleteBtn').addEventListener('click', function() {
+    document.getElementById('deleteBtn').addEventListener('click', function () {
         if (!selectedRow) return;
         showDeleteModal();
     });
 
     // Confirmar eliminación
-    confirmDeleteBtn.addEventListener('click', function() {
-        if (!selectedRow) return;
-        
-        const id = parseInt(selectedRow.getAttribute('data-id'));
-        records = records.filter(r => r.id !== id);
-        localStorage.setItem('records', JSON.stringify(records));
-        displayRecords();
+    confirmDeleteBtn.addEventListener('click', function () {
+        if (!selectedRow) return
+
+        const id = selectedRow.dataset.id
+        eliminarConductor(id)
+        displayRecords()
         showNotification('Registro eliminado correctamente', 'success');
-        hideDeleteModal();
-        contextMenu.style.display = 'none';
+        loadConductores()
+        hideDeleteModal()
+        contextMenu.style.display = 'none'
     });
 
     // Cancelar eliminación
@@ -198,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
     closeModalBtn.addEventListener('click', hideDeleteModal);
 
     // Cerrar modal al hacer clic fuera del contenido
-    deleteModal.addEventListener('click', function(e) {
+    deleteModal.addEventListener('click', function (e) {
         if (e.target === deleteModal) {
             hideDeleteModal();
         }
@@ -216,15 +245,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Crear elemento de notificación
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        
+
         // Crear contenedor de mensaje
         const messageContainer = document.createElement('div');
         messageContainer.className = 'notification-message';
         messageContainer.textContent = message;
-        
+
         // Agregar mensaje a la notificación
         notification.appendChild(messageContainer);
-        
+
         // Agregar botón de cierre
         const closeButton = document.createElement('button');
         closeButton.className = 'notification-close';
@@ -233,27 +262,27 @@ document.addEventListener('DOMContentLoaded', function() {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
         });
-        
+
         notification.appendChild(closeButton);
         document.body.appendChild(notification);
-        
+
         // Forzar reflow para permitir la transición
         void notification.offsetWidth;
-        
+
         // Mostrar notificación con animación
         notification.classList.add('show');
-        
+
         // Configurar tiempo de cierre automático
         let timeoutId = setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
         }, 4000);
-        
+
         // Pausar el cierre automático al hacer hover
         notification.addEventListener('mouseenter', () => {
             clearTimeout(timeoutId);
         });
-        
+
         // Reanudar cuenta regresiva al salir del hover
         notification.addEventListener('mouseleave', () => {
             timeoutId = setTimeout(() => {
@@ -264,9 +293,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Mostrar modal para agregar nuevo registro
-    addBtn.addEventListener('click', function() {
+    addBtn.addEventListener('click', async function () {
         document.getElementById('recordForm').reset();
         document.getElementById('recordId').value = '';
+        // Asegurarse de que las multas estén cargadas
+        await populateViolationsSelect();
         modalTitle.textContent = 'Agregar Nuevo Registro';
         recordModal.style.display = 'flex';
         document.body.style.overflow = 'hidden'; // Prevenir scroll
@@ -282,113 +313,83 @@ document.addEventListener('DOMContentLoaded', function() {
     cancelBtn.addEventListener('click', closeModal);
 
     // Cerrar modal al hacer clic fuera del contenido
-    window.addEventListener('click', function(e) {
+    window.addEventListener('click', function (e) {
         if (e.target === recordModal) {
             closeModal();
         }
     });
 
     // Cerrar modal con la tecla Escape
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && recordModal.style.display === 'flex') {
             closeModal();
         }
     });
 
     // Manejar envío del formulario
-    recordForm.addEventListener('submit', function(e) {
+    recordForm.addEventListener('submit', function (e) {
         e.preventDefault();
-        
+
         const id = document.getElementById('recordId').value;
-        const selectedViolations = Array.from(document.getElementById('violations').selectedOptions)
-            .map(option => option.value);
-        
+        const getSelectedMultaIds = getSelectedViolationIds();
+        console.log(getSelectedMultaIds)
+        const multasSeleccionadasConEstado = getSelectedMultaIds.map(multa => {
+            let estado = "Por pagar"; // Estado por defecto si solo se marcó "seleccionar"
+
+            if (multa.opciones.includes("adelantado")) {
+                estado = "Pagada por adelantado";
+            }
+
+            return {
+                multa: multa.id, // Se renombra a 'multa' para coincidir con el Schema (type: ObjectId, ref: "Multa")
+                estado: estado
+            };
+        });
+        console.log(multasSeleccionadasConEstado)
         const record = {
-            id: id ? parseInt(id) : nextId++,
-            license: document.getElementById('license').value.trim(),
-            name: document.getElementById('name').value.trim(),
-            lastname: document.getElementById('lastname').value.trim(),
+            nombre: document.getElementById('nombre').value.trim(),
+            apellido: document.getElementById('apellido').value.trim(),
             dni: document.getElementById('dni').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
-            vehicle: document.getElementById('vehicle').value.trim(),
-            violations: selectedViolations,
-            status: document.getElementById('status').value
+            telefono: document.getElementById('telefono').value.trim(),
+            patente: document.getElementById('patente').value.trim(),
+            infracciones: multasSeleccionadasConEstado,
         };
 
-        // Validar DNI (solo números)
-        if (!/^\d+$/.test(record.dni)) {
-            showNotification('El DNI debe contener solo números', 'error');
-            return;
-        }
-
-        // Validar patente (formato básico)
-        if (!/^[A-Z]{2,3}\s?\d{3,4}$/i.test(record.vehicle)) {
-            showNotification('Ingrese una patente válida (ej: AB 123 CD o ABC 123)', 'error');
-            return;
-        }
 
         if (id) {
-            // Actualizar registro existente
-            const index = records.findIndex(r => r.id === parseInt(id));
-            if (index !== -1) {
-                records[index] = record;
-                showNotification('Registro actualizado correctamente', 'success');
-            }
+            updateConductores(id, record)
+            loadConductores();
+
+            showNotification('Registro actualizado correctamente', 'success');
         } else {
             // Agregar nuevo registro
-            records.push(record);
+            postConductores(record)
+            loadConductores();
+
             showNotification('Conductor agregado correctamente', 'success');
         }
 
-        // Ordenar registros por apellido y nombre
-        records.sort((a, b) => {
-            const nameA = `${a.lastname} ${a.name}`.toUpperCase();
-            const nameB = `${b.lastname} ${b.name}`.toUpperCase();
-            return nameA.localeCompare(nameB);
-        });
-        
-        // Guardar en localStorage
-        localStorage.setItem('records', JSON.stringify(records));
-        
         // Actualizar la tabla y cerrar el modal
         displayRecords();
         closeModal();
     });
 
-    // Formatear patente para mostrar en mayúsculas
-    document.getElementById('vehicle').addEventListener('input', function(e) {
-        this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
-    });
-    
-    // Formatear DNI para mostrar solo números
-    document.getElementById('dni').addEventListener('input', function(e) {
-        this.value = this.value.replace(/\D/g, '');
-    });
-    
-    // Formatear teléfono
-    document.getElementById('phone').addEventListener('input', function(e) {
-        this.value = this.value.replace(/\D/g, '');
-        if (this.value.length > 10) {
-            this.value = this.value.slice(0, 10);
-        }
-    });
-
     // Inicializar la tabla al cargar la página
     displayRecords();
-    
+
     // Manejar búsqueda
     const searchInput = document.getElementById('searchInput');
     let searchTimeout;
-    
-    searchInput.addEventListener('input', function(e) {
+
+    searchInput.addEventListener('input', function (e) {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             displayRecords(e.target.value.trim());
         }, 300);
     });
-    
+
     // Permitir limpiar la búsqueda con la tecla Escape
-    searchInput.addEventListener('keydown', function(e) {
+    searchInput.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             this.value = '';
             displayRecords('');
@@ -406,31 +407,25 @@ document.addEventListener('DOMContentLoaded', function() {
 const API_URL = "http://localhost:3000";
 
 const conductores = async () => {
-    try {
-        const resp = await fetch(`${API_URL}/conductores`);
-        if (!resp.ok) {
-          const msg = await safeText(resp); // opcional, intenta leer texto del error
-          throw new Error(`Error ${resp.status}: ${msg || 'No se pudieron obtener los automóviles'}`);
-        }
-        return await resp.json();
-    } catch (e) {
-        console.error('fetchAutomoviles fallo:', e);
-        // aquí podrías mostrar un toast/mensaje global
-        throw e; // re-lanzar para que el caller decida qué hacer
+    const resp = await fetch(`${API_URL}/conductores`);
+    if (!resp.ok) {
+        const msg = await resp.text().catch(() => '');
+        throw new Error(`Error ${resp.status}: ${msg || 'No se pudieron obtener los conductores'}`);
     }
-}
+    return resp.json();
+};
 
-async function postConductores() {
+async function postConductores(record) {
     const resp = await fetch(`${API_URL}/conductores`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            nombre: 'John Doe',
-            apellido: 'Doe',
-            dni: '12345678',
-            telefono: '12345678',
+            nombre: record.nombre,
+            apellido: record.apellido,
+            dni: record.dni,
+            telefono: record.telefono,
+            patente: record.patente,
+            infracciones: record.infracciones
         })
     });
     if (!resp.ok) throw new Error('No se pudo agregar el conductor');
@@ -438,12 +433,12 @@ async function postConductores() {
 }
 
 async function eliminarConductor(id) {
-  const resp = await fetch(`${API_URL}/conductores/${id}`, { method: 'DELETE' });
-  if (!resp.ok) {
-    const err = await resp.text().catch(() => '');
-    throw new Error(`No se pudo borrar el conductor: ${resp.status} ${err}`);
-  }
-  return resp.json(); // opcional, según lo que devuelva tu API
+    const resp = await fetch(`${API_URL}/conductores/${id}`, { method: 'DELETE' });
+    if (!resp.ok) {
+        const err = await resp.text().catch(() => '');
+        throw new Error(`No se pudo borrar el conductor: ${resp.status} ${err}`);
+    }
+    return resp.json(); // opcional, según lo que devuelva tu API
 }
 
 async function updateConductores(id, params) {
@@ -458,7 +453,115 @@ async function updateConductores(id, params) {
     return resp.json();
 }
 
-const datos = conductores() 
-.then(data => console.log('Automóviles:', data))
-.catch(err => console.error(err));
-console.log(datos)
+
+
+const multas = async () => {
+    const resp = await fetch(`${API_URL}/multas`);
+    if (!resp.ok) {
+        const msg = await resp.text().catch(() => '');
+        throw new Error(`Error ${resp.status}: ${msg || 'No se pudieron obtener las multas'}`);
+    }
+    return resp.json();
+};
+
+let multasDict = {};
+let multasById = {};
+
+async function populateViolationsSelect() {
+    try {
+        const cont = document.getElementById('multas-container');
+        if (!cont) return;
+
+        if (!lista || lista.length === 0) {
+            lista = await multas();
+        }
+
+        multasDict = {};
+        multasById = {};
+
+        cont.innerHTML = '';
+
+        lista.forEach(m => {
+            const label = m.motivo ? m.motivo : (m.tipo ?? "Multa");
+            const multaId = m._id; // Almacenamos el ID para usarlo en los names/ids
+
+            const div = document.createElement("div");
+            div.classList.add("multa-item");
+
+            // --- MODIFICACIÓN CLAVE: Cambiar 'type="radio"' por 'type="checkbox"' ---
+            div.innerHTML = `
+                <span>${label}</span>
+                <div class="multa-opciones">
+                    <label>
+                        <input type="checkbox" name="multa_seleccionada_${multaId}" value="true" data-id="${multaId}" class="multa-select">
+                        Seleccionar
+                    </label>
+
+                    <label>
+                        <input type="checkbox" name="multa_pagada_${multaId}" value="true" data-id="${multaId}" class="multa-pagada">
+                        Pagada por adelantado
+                    </label>`
+
+
+            multasDict[m._id] = label;
+            multasById[m._id] = m;
+
+            cont.appendChild(div);
+        });
+
+        // Eventos de los botones
+        document.querySelectorAll(".btn-pagar").forEach(btn => {
+            btn.addEventListener("click", async e => {
+                const id = e.target.dataset.id;
+                pagarMulta(id);
+            });
+        });
+
+    } catch (e) {
+        console.error("Error cargando multas:", e);
+    }
+}
+
+
+function getSelectedViolationIds() {
+    // 1. Obtener todos los checkboxes marcados dentro del contenedor principal.
+    const checkboxesMarcados = document.querySelectorAll('#multas-container input[type="checkbox"]:checked');
+
+    console.log("Checkboxes marcados:", checkboxesMarcados);
+
+    const multasSeleccionadas = [];
+
+    checkboxesMarcados.forEach(checkbox => {
+        const id = checkbox.dataset.id;
+        const name = checkbox.name;
+
+        // Determinar qué opción se seleccionó
+        let opcion;
+        if (name.startsWith('multa_pagada_')) {
+            opcion = 'adelantado'; // Usar 'adelantado' para coincidir con tu valor original si es necesario
+        } else if (name.startsWith('multa_seleccionada_')) {
+            opcion = 'seleccionar'; // Usar 'seleccionar' para coincidir con tu valor original si es necesario
+        } else {
+            return; // Ignorar otros checkboxes que no sigan el patrón
+        }
+
+        // 2. Agrupar las opciones por el ID de la multa.
+        // Busca si esta multa (por ID) ya fue añadida al array de resultados.
+        let multaExistente = multasSeleccionadas.find(m => m.id === id);
+
+        if (!multaExistente) {
+            // Si no existe, crea un nuevo objeto para la multa.
+            multaExistente = {
+                id: id,
+                opciones: []
+            };
+            multasSeleccionadas.push(multaExistente);
+        }
+
+        // Agrega la opción seleccionada (pueden ser ambas: 'seleccionar' y 'adelantado').
+        multaExistente.opciones.push(opcion);
+    });
+
+    // Devuelve un array con objetos que contienen el ID y un array de las opciones seleccionadas.
+    return multasSeleccionadas;
+}

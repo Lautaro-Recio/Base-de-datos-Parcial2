@@ -5,14 +5,14 @@ const router = express.Router();
 
 // GET todos
 router.get("/", async (req, res) => {
-    const multas = await Multa.find().populate("automovil_id");
+    const multas = await Multa.find();
     res.json(multas);
 });
 
 // GET por ID
 router.get("/:id", async (req, res) => {
     try {
-        const multa = await Multa.findById(req.params.id).populate("automovil_id");
+        const multa = await Multa.findById(req.params.id);
         if (!multa) return res.status(404).json({ error: "Multa no encontrada" });
         res.json(multa);
     } catch (error) {
