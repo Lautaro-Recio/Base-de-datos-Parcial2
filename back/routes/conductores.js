@@ -1,7 +1,7 @@
 import express from "express";
 import Conductor from "../models/conductor.js";
 
-const router = express.Router();
+const router = express.Router(); // Esto crea un mini servidor donde definís todas las rutas relacionadas con automóviles.
 
 // GET todos
 router.get("/", async (req, res) => {
@@ -23,7 +23,7 @@ router.get("/:id", async (req, res) => {
 // POST crear
 router.post("/", async (req, res) => {
     try {
-        const body = { ...req.body };
+        const body = { ...req.body }; // Crea un nuevo conductor con los datos enviados en el body de la peticion y valida los campos segun el schema
         if (Array.isArray(body.infracciones)) {
             body.infracciones = body.infracciones.map((inf) => {
                 // Permitir subdoc completo o solo ID

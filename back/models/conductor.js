@@ -8,7 +8,7 @@ const conductorSchema = new mongoose.Schema({
     telefono: String,
     patente: String,
     infracciones: [{
-        multa: { type: mongoose.Schema.Types.ObjectId, ref: "Multa", required: true },
+        multa: { type: mongoose.Schema.Types.ObjectId, ref: "Multa", required: true }, // multa no guarda la multa completa, Guarda solo el ObjectId de la multa, ref: "Multa" le dice a Mongoose
         estado: { type: String, default: "Por pagar" }
     }]
 });

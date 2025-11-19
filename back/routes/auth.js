@@ -1,14 +1,14 @@
-import express from "express";
+import express from "express"; // Importa express, que es el framework que te permite crear un servidor web fácilmente.
 
-const router = express.Router();
+const router = express.Router(); // Crea un router de Express.
 
 // Credenciales de autenticación
-const USUARIO_VALIDO = "alumno";
-const CONTRASENA_VALIDA = "alu123";
+const USUARIO_VALIDO = "alumno"; // Usuario
+const CONTRASENA_VALIDA = "alu123";  // Contraseña
 
 // Ruta de login
 router.post("/login", (req, res) => {
-    const { username, password } = req.body;
+    const { username, password } = req.body; // Obtiene el usuario y la contraseña del body de la petición
 
     // Validar que se envíen los datos
     if (!username || !password) {
@@ -35,7 +35,7 @@ router.post("/login", (req, res) => {
 
 // Ruta de logout
 router.post("/logout", (req, res) => {
-    return res.status(200).json({
+    return res.status(200).json({ // retorna un json con el estado de la operacion
         success: true,
         message: "Sesión cerrada correctamente"
     });
